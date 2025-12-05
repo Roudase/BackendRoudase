@@ -1,8 +1,28 @@
+version: "3.9"
+
 services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: backend_roudase
+    ports:
+      - "5432:5432"
+    volumes:
+      - backend_roudase_db_data:/var/lib/postgresql/data
+
   app:
     build: .
     restart: always
+    depends_on:
+      - db
     environment:
-      - PORT=8080
+      PORT: "8080"
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/backend_roudase"
     ports:
       - "8080:8080"
+
+volumes:
+  backend_roudase_db_data:

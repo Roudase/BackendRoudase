@@ -9,3 +9,7 @@ pnpm-lock.yaml
 .DS_Store
 .idea
 .vscode
+
+/generated/prisma
+
+/generated/prisma

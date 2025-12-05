@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  name              String
+
+  defaultCurrencyId Int?
+  defaultCurrency   Currency? @relation("UserDefaultCurrency", fields: [defaultCurrencyId], references: [id])
+
+  records           Record[]
+}
+
+model Category {
+  id      Int      @id @default(autoincrement())
+  name    String
+  records Record[]
+}
+
+model Currency {
+  id           Int        @id @default(autoincrement())
+  code         String     @unique
+  name         String
+  usersDefault User[]     @relation("UserDefaultCurrency")
+  records      Record[]
+}
+
+model Record {
+  id         Int      @id @default(autoincrement())
+
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  currency   Currency @relation(fields: [currencyId], references: [id])
+  currencyId Int
+
+  amount     Float
+  createdAt  DateTime @default(now())
+}
