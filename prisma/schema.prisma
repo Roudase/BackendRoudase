@@ -10,6 +10,8 @@ datasource db {
 model User {
   id                Int       @id @default(autoincrement())
   name              String
+  email             String    @unique
+  passwordHash      String
 
   defaultCurrencyId Int?
   defaultCurrency   Currency? @relation("UserDefaultCurrency", fields: [defaultCurrencyId], references: [id])
