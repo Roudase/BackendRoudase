@@ -1,4 +1,4 @@
-# BackendRoudase — Лабораторна робота 3
+# BackendRoudase — Лабораторні роботи 1–4
 
 ## Опис проєкту
 
@@ -6,13 +6,14 @@
 Проєкт реалізовано на **Node.js + TypeScript** з використанням **Express** як HTTP‑фреймворку
 та **Prisma ORM** для роботи з базою даних **PostgreSQL**.
 
-У цій версії проєкту реалізовано вимоги **лабораторних робіт 1–3** дисципліни
+У цій версії проєкту реалізовано вимоги **лабораторних робіт 1–4** дисципліни
 «Технології серверного програмного забезпечення»:
 
 - ЛР1 — базовий HTTP‑сервер та ендпоінт `/healthcheck`.
 - ЛР2 — CRUD‑функціонал для користувачів, категорій витрат та записів витрат.
 - ЛР3 — **валідація вхідних даних, обробка помилок та робота з ORM (Prisma + PostgreSQL)**
   з реалізацією додаткового завдання згідно варіанту.
+- ЛР4 — **автентифікація користувачів за допомогою JWT**, захист ендпоінтів та інтеграція з уже реалізованим функціоналом обліку витрат.
 
 ---
 
@@ -143,6 +144,8 @@ DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?schema=pub
 - **User**
   - `id` — первинний ключ
   - `name` — ім’я користувача
+  - `email` — унікальна адреса електронної пошти (використовується для логіну)
+  - `passwordHash` — хеш пароля користувача (зберігається лише в БД, не повертається в API)
   - `defaultCurrencyId` — (опційно) посилання на валюту за замовчуванням
 
 - **Category**
@@ -169,6 +172,11 @@ DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?schema=pub
 
 Базова адреса: `http://localhost:8080` (або `{{baseUrl}}` у Postman).
 
+Починаючи з **лабораторної роботи 4**, більшість ендпоінтів захищені за допомогою JWT‑токена:
+
+- публічні ендпоінти: `GET /healthcheck`, `POST /user` (реєстрація), `POST /auth/login` (логін);
+- усі інші запити повинні містити заголовок `Authorization: Bearer <token>`.
+
 ### 1. Healthcheck
 
 - `GET /healthcheck`  
@@ -186,15 +194,30 @@ DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?schema=pub
 
 ### 2. Користувачі (User)
 
-#### Створити користувача
+#### Реєстрація користувача
 
 - `POST /user`
 - Body (JSON):
   ```json
   {
-    "name": "John Doe"
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "secret123"
   }
   ```
+  Повертає створеного користувача без поля `passwordHash`.
+
+#### Логін користувача (отримання JWT‑токена)
+
+- `POST /auth/login`
+- Body (JSON):
+  ```json
+  {
+    "email": "test@example.com",
+    "password": "secret123"
+  }
+  ```
+  У відповіді повертається обʼєкт із полем `accessToken`, яке використовується в заголовку `Authorization: Bearer <token>`.
 
 #### Отримати користувача за `id`
 
@@ -318,22 +341,30 @@ DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?schema=pub
 
 ---
 
-## Postman‑колекція
+## Postman‑колекції
 
-Для зручного тестування API додано Postman‑колекцію:
+Для зручного тестування API додано кілька Postman‑колекцій:
 
-- `BackendRoudase-lab3.postman_collection.json`
+- `BackendRoudase-lab3.postman_collection.json` — базові ендпоінти для ЛР1–3 (healthcheck, користувачі, валюти, категорії, записи).
+- `BackendRoudase-lab4.postman_collection.json` — ті самі ендпоінти з налаштованим флоу **реєстрація → логін → робота з захищеними JWT‑маршрутами** (ЛР4).
+
+Також додано середовища (environment files):
+
+- `BackendRoudase-local.postman_environment.json` — для локального запуску (`baseUrl = http://localhost:8080`).
+- `BackendRoudase-render.postman_environment.json` — для продакшен‑деплою на Render.
 
 ### Як імпортувати
 
 1. Відкрити **Postman** → `Import` → `File`.
-2. Обрати файл `BackendRoudase-lab3.postman_collection.json`.
-3. Після імпорту в налаштуваннях колекції встановити змінну `baseUrl`, наприклад:
-   - `http://localhost:8080`
+2. Обрати потрібну колекцію (`BackendRoudase-lab3.postman_collection.json` або `BackendRoudase-lab4.postman_collection.json`).
+3. За бажанням імпортувати відповідний environment‑файл та активувати його.
+4. Переконатися, що змінна `baseUrl` в середовищі вказує на:
+   - `http://localhost:8080` — для локальної розробки;
    - або URL сервісу на **Render**.
 
-Колекція містить запити до всіх основних ендпоінтів: healthcheck, користувачі,
-валюти, категорії та записи витрат.
+У колекції для ЛР4 токен аутентифікації автоматично зберігається у змінну `token`
+на рівні колекції після успішного запиту `POST /auth/login` і далі використовується
+в заголовку `Authorization: Bearer {{token}}` для захищених ендпоінтів.
 
 ---
 
@@ -343,7 +374,20 @@ DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?schema=pub
 
 ```bash
 git tag v3.0.0 -a -m "Lab 3"
+git tag v4.0.0 -a -m "Lab 4 (JWT auth)"
 git push --tags
 ```
 
-Де `v3.0.0` — версія застосунку, що відповідає реалізації лабораторної роботи 3.
+Де:
+- `v3.0.0` — версія застосунку, що відповідає реалізації лабораторної роботи 3;
+- `v4.0.0` — версія із доданою аутентифікацією користувачів (JWT) згідно лабораторної роботи 4.
+
+### Postman Flows
+
+**2 лабораторна робота:**
+
+![Lab 2 flow](assets/lab2-flow.png)
+
+**4 лабораторна робота:**
+
+![Lab 4 flow](assets/lab4-flow.png)
